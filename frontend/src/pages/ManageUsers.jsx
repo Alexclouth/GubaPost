@@ -1,8 +1,11 @@
+// src/pages/ManageUsers.jsx
 import { useState, useEffect } from "react";
 import { Shield, Edit, Trash2, Loader2 } from "lucide-react";
-import axios from "axios";
+import api from "../api/axios"; // centralized axios instance
+import { useAuth } from "../context/AuthContext";
 
 export default function ManageUsers() {
+  const { token } = useAuth();
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -10,90 +13,79 @@ export default function ManageUsers() {
   const [editingUser, setEditingUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  // ✅ Fetch users and roles
+  // Fetch users and roles
   useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const [userRes, roleRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/users"),
-        axios.get("http://localhost:5000/api/roles"),
-      ]);
-
-      // Safely handle different possible response structures
-      let allUsers = userRes.data?.users || userRes.data || [];
-
-      // ✅ Filter out the superadmin regardless of letter case
-      const filtered = allUsers.filter((u) => {
-        const email =
-          u?.email?.toLowerCase() ||
-          u?.user?.email?.toLowerCase() ||
-          "";
-        return email !== "superadmin@gmail.com";
-      });
-
-      setUsers(filtered);
-      setRoles(roleRes.data || []);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  fetchData();
-}, []);
-
-  // ✅ Handle delete
-  const handleDelete = async (id) => {
-    if (confirm("Are you sure you want to delete this user?")) {
+    const fetchData = async () => {
       try {
-        await axios.delete(`http://localhost:5000/api/users/${id}`);
-        setUsers(users.filter((u) => u._id !== id));
+        const [userRes, roleRes] = await Promise.all([
+          api.get("/api/users", { headers: { Authorization: `Bearer ${token}` } }),
+          api.get("/api/roles", { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
+
+        // Handle possible response structure
+        let allUsers = userRes.data?.users || userRes.data || [];
+
+        // Filter out superadmin
+        const filtered = allUsers.filter(
+          (u) => u?.email?.toLowerCase() !== "superadmin@gmail.com"
+        );
+
+        setUsers(filtered);
+        setRoles(roleRes.data || []);
       } catch (error) {
-        console.error("Error deleting user:", error);
-        alert("Failed to delete user.");
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
       }
+    };
+    fetchData();
+  }, [token]);
+
+  // Delete user
+  const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this user?")) return;
+    try {
+      await api.delete(`/api/users/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      setUsers(users.filter((u) => u._id !== id));
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      alert(error.response?.data?.message || "Failed to delete user.");
     }
   };
 
-  // ✅ Handle edit click
+  // Edit user
   const handleEditClick = (user) => {
     setEditingUser({
       _id: user._id,
       username: user.username,
       email: user.email,
       status: user.status,
-      role: user.role?._id || user.role, // may be object or id
+      role: user.role?._id || user.role,
     });
     setIsEditing(true);
   };
 
-  // ✅ Handle form input
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setEditingUser((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Save edited user
   const handleSaveEdit = async () => {
+    if (!editingUser) return;
+
     try {
-      // Send only role ID and status
       const updatedData = {
         role: editingUser.role,
         status: editingUser.status,
       };
 
-      const res = await axios.put(
-        `http://localhost:5000/api/users/${editingUser._id}`,
-        updatedData
+      const res = await api.put(
+        `/api/users/${editingUser._id}`,
+        updatedData,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Update state
-      setUsers(
-        users.map((u) =>
-          u._id === editingUser._id ? { ...u, ...res.data.user } : u
-        )
-      );
-
+      setUsers(users.map((u) => (u._id === editingUser._id ? { ...u, ...res.data.user } : u)));
       setIsEditing(false);
       setEditingUser(null);
       alert("User updated successfully!");
@@ -103,7 +95,6 @@ export default function ManageUsers() {
     }
   };
 
-  // ✅ Filter users by search
   const filteredUsers = users.filter(
     (u) =>
       u.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -115,10 +106,8 @@ export default function ManageUsers() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
         <div className="flex items-center gap-2">
-          <Shield className="text-green-600" />{" "}
-          <span className="text-3xl font-extrabold text-gray-800 tracking-tight">
-            Manage Users
-          </span>
+          <Shield className="text-green-600" />
+          <span className="text-3xl font-extrabold text-gray-800 tracking-tight">Manage Users</span>
         </div>
         <div className="relative w-full sm:w-72">
           <input
@@ -131,7 +120,7 @@ export default function ManageUsers() {
         </div>
       </div>
 
-      {/* Loading state */}
+      {/* Loading */}
       {loading ? (
         <div className="flex justify-center items-center mt-20">
           <Loader2 className="animate-spin text-green-500" size={32} />
@@ -153,9 +142,7 @@ export default function ManageUsers() {
 
               {/* Content */}
               <div className="pt-14 pb-5 px-5 text-center">
-                <h2 className="text-lg font-semibold text-gray-800">
-                  {u.username}
-                </h2>
+                <h2 className="text-lg font-semibold text-gray-800">{u.username}</h2>
                 <p className="text-gray-500 text-sm">{u.email}</p>
 
                 <div className="mt-3 flex justify-center gap-3">
@@ -164,9 +151,7 @@ export default function ManageUsers() {
                   </span>
                   <span
                     className={`px-3 py-1 text-xs font-medium rounded-full ${
-                      u.status === "active"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
+                      u.status === "active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                     }`}
                   >
                     {u.status}
@@ -192,19 +177,16 @@ export default function ManageUsers() {
           ))}
         </div>
       ) : (
-        <p className="text-gray-500 text-center mt-10">
-          No users found matching your search.
-        </p>
+        <p className="text-gray-500 text-center mt-10">No users found matching your search.</p>
       )}
 
-      {/* ✏️ Edit Modal */}
+      {/* Edit Modal */}
       {isEditing && editingUser && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-lg">
             <h2 className="text-xl font-bold mb-4 text-gray-800">Edit User</h2>
 
             <div className="space-y-3">
-              {/* Role Dropdown */}
               <select
                 name="role"
                 value={editingUser.role}
@@ -219,7 +201,6 @@ export default function ManageUsers() {
                 ))}
               </select>
 
-              {/* Status Dropdown */}
               <select
                 name="status"
                 value={editingUser.status}
@@ -232,16 +213,10 @@ export default function ManageUsers() {
             </div>
 
             <div className="flex justify-end gap-3 mt-5">
-              <button
-                onClick={() => setIsEditing(false)}
-                className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
-              >
+              <button onClick={() => setIsEditing(false)} className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300">
                 Cancel
               </button>
-              <button
-                onClick={handleSaveEdit}
-                className="px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600"
-              >
+              <button onClick={handleSaveEdit} className="px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600">
                 Save Changes
               </button>
             </div>

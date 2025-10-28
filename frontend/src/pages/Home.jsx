@@ -1,5 +1,6 @@
+// src/pages/Home.jsx
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../api/axios"; // ← centralized axios
 import Navbar from "../components/Navbar";
 
 export default function Home() {
@@ -10,7 +11,7 @@ export default function Home() {
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:5000/api/posts");
+      const res = await api.get("/api/posts"); // ← use centralized API
       // Only show published posts and sort by newest
       const publishedPosts = res.data
         .filter((post) => post.status === "Published")
@@ -29,6 +30,7 @@ export default function Home() {
 
   return (
     <div className="bg-gray-50 min-h-screen">
+      <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-4xl font-extrabold text-gray-800 mb-10 text-center">
           Latest <span className="text-green-600">Posts</span>

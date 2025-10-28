@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import {
   BarChart,
   Bar,
@@ -11,15 +10,16 @@ import {
 } from "recharts";
 import DashboardCard from "../components/DashboardCard";
 import { useAuth } from "../context/AuthContext";
+import api from "../api/axios"; // centralized axios instance
 
 export default function SuperAdminDashboard() {
   const { token } = useAuth();
 
-  // ✅ Fetch dashboard stats from backend
+  // Fetch dashboard stats
   const { data, isLoading, isError } = useQuery({
     queryKey: ["superAdminDashboard"],
     queryFn: async () => {
-      const res = await axios.get("http://localhost:5000/api/super-admin/stats", {
+      const res = await api.get("/api/super-admin/stats", {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data;
@@ -42,18 +42,6 @@ export default function SuperAdminDashboard() {
     );
   }
 
-  // Example backend response shape:
-  // {
-  //   totalUsers: 150,
-  //   activeRoles: 5,
-  //   totalPosts: 320,
-  //   monthlyActivity: [
-  //     { month: "Jan", users: 10, posts: 20 },
-  //     { month: "Feb", users: 15, posts: 25 },
-  //     ...
-  //   ]
-  // }
-
   const { totalUsers, activeRoles, totalPosts, monthlyActivity } = data;
 
   return (
@@ -63,7 +51,7 @@ export default function SuperAdminDashboard() {
           Super Admin Dashboard
         </h1>
 
-        {/* 📊 Stats Cards */}
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <DashboardCard
             title="Total Users"
@@ -85,7 +73,7 @@ export default function SuperAdminDashboard() {
           />
         </div>
 
-        {/* 📈 Chart Section */}
+        {/* Chart Section */}
         <div className="mt-12 bg-white shadow-md rounded-2xl p-6">
           <h2 className="text-2xl font-semibold text-gray-700 mb-6">
             Monthly Activity Overview

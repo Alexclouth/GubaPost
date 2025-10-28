@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import api from "../api/axios"; // ← use centralized axios instance
 
 export const AuthContext = createContext();
 
@@ -10,19 +10,19 @@ export const AuthProvider = ({ children }) => {
   const queryClient = useQueryClient();
   const [token, setToken] = useState(localStorage.getItem("token") || null);
 
-  // restore token on page reload
+  // Restore token on page reload
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     if (storedToken) setToken(storedToken);
   }, []);
 
-  // fetch current user
+  // Fetch current user
   const { data: user, refetch, isLoading } = useQuery({
     queryKey: ["currentUser"],
     queryFn: async () => {
       if (!token) return null;
       try {
-        const res = await axios.get("http://localhost:5000/api/auth/me", {
+        const res = await api.get("/api/auth/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
         localStorage.setItem("user", JSON.stringify(res.data));
@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (username, email, password) => {
     try {
-      await axios.post("http://localhost:5000/api/auth/signup", { username, email, password });
+      await api.post("/api/auth/signup", { username, email, password });
       alert("Signup successful! Please login.");
       navigate("/login");
     } catch (err) {
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", { email, password });
+      const res = await api.post("/api/auth/login", { email, password });
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       setToken(res.data.token);

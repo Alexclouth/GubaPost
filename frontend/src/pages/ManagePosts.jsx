@@ -1,7 +1,7 @@
 // src/pages/ManagePosts.jsx
 import { useState, useEffect } from "react";
 import { FileText, Edit, Trash2, Loader2, Search } from "lucide-react";
-import axios from "axios";
+import api from "../api/axios"; // ← centralized axios
 import { useAuth } from "../context/AuthContext";
 
 export default function ManagePosts() {
@@ -12,12 +12,12 @@ export default function ManagePosts() {
   const [newStatus, setNewStatus] = useState("");
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
-  const [searchTerm, setSearchTerm] = useState(""); // ✅ Search input state
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:5000/api/posts");
+      const res = await api.get("/api/posts"); // ← use centralized API
       setPosts(res.data);
     } catch (err) {
       console.error("Failed to load posts:", err);
@@ -34,7 +34,7 @@ export default function ManagePosts() {
     if (!confirm("Are you sure you want to delete this post?")) return;
     try {
       setDeletingId(id);
-      await axios.delete(`http://localhost:5000/api/posts/${id}`, {
+      await api.delete(`/api/posts/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setPosts((prev) => prev.filter((p) => p._id !== id));
@@ -56,8 +56,8 @@ export default function ManagePosts() {
 
     try {
       setSaving(true);
-      await axios.put(
-        `http://localhost:5000/api/posts/${selectedPost._id}/status`,
+      await api.put(
+        `/api/posts/${selectedPost._id}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -76,7 +76,6 @@ export default function ManagePosts() {
     }
   };
 
-  // ✅ Filter posts by search term (title or content)
   const filteredPosts = posts.filter(
     (post) =>
       post.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -94,13 +93,13 @@ export default function ManagePosts() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-green-50 p-6">
-      {/* Header Section */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
         <h1 className="text-3xl font-extrabold text-gray-800 flex items-center gap-2">
           <FileText className="text-green-600" /> Manage Posts
         </h1>
 
-        {/* ✅ Search Bar */}
+        {/* Search */}
         <div className="relative w-full sm:w-80">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
           <input
@@ -133,9 +132,7 @@ export default function ManagePosts() {
               )}
 
               <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-1">{post.title}</h3>
-              <p className="text-gray-600 text-sm flex-1 mb-3 line-clamp-3">
-                {post.content}
-              </p>
+              <p className="text-gray-600 text-sm flex-1 mb-3 line-clamp-3">{post.content}</p>
 
               {post.author && (
                 <p className="text-sm text-gray-500 mb-2">
@@ -174,18 +171,14 @@ export default function ManagePosts() {
           ))}
         </div>
       ) : (
-        <p className="text-center text-gray-500 mt-10">
-          No posts found matching your search.
-        </p>
+        <p className="text-center text-gray-500 mt-10">No posts found matching your search.</p>
       )}
 
-      {/* Edit Status Modal */}
+      {/* Edit Modal */}
       {selectedPost && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-[90%] max-w-md animate-fadeIn">
-            <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">
-              Edit Post Status
-            </h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">Edit Post Status</h2>
             <p className="text-gray-600 mb-4 text-center">
               <span className="font-medium">{selectedPost.title}</span>
             </p>

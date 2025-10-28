@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ImagePlus, CheckCircle2, Loader2 } from "lucide-react";
-import axios from "axios";
+import api from "../api/axios"; // ← centralized axios
 import { useAuth } from "../context/AuthContext";
 
 export default function CreatePost() {
@@ -37,7 +37,7 @@ export default function CreatePost() {
       formData.append("content", content);
       if (image) formData.append("image", image);
 
-      const res = await axios.post("http://localhost:5000/api/posts", formData, {
+      const res = await api.post("/api/posts", formData, {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
       });
 
@@ -58,33 +58,63 @@ export default function CreatePost() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-green-50 via-white to-green-100 flex justify-center items-center p-6">
-      <motion.div className="w-full max-w-3xl bg-white rounded-3xl shadow-lg p-8 md:p-10"
-        initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+      <motion.div
+        className="w-full max-w-3xl bg-white rounded-3xl shadow-lg p-8 md:p-10"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
         <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800 mb-8 text-center">
           ✍️ Create <span className="text-green-600">New Post</span>
         </h1>
 
         {success && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center justify-center bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6"
+          >
             <CheckCircle2 className="w-5 h-5 mr-2" /> <p>🎉 Post created successfully!</p>
           </motion.div>
         )}
 
-        {error && <div className="bg-red-100 text-red-700 border border-red-400 px-4 py-3 rounded-lg mb-6 text-center">{error}</div>}
+        {error && (
+          <div className="bg-red-100 text-red-700 border border-red-400 px-4 py-3 rounded-lg mb-6 text-center">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <input type="text" placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)}
-            className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-green-500" />
-          <textarea placeholder="Content" value={content} onChange={(e) => setContent(e.target.value)}
-            className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-green-500" rows={6} />
+          <input
+            type="text"
+            placeholder="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-green-500"
+          />
+          <textarea
+            placeholder="Content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-green-500"
+            rows={6}
+          />
 
           <label className="flex items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg p-4 cursor-pointer hover:bg-green-50">
             <ImagePlus className="w-6 h-6 text-green-600 mr-2" /> Click or drag to upload
             <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
           </label>
-          {preview && <img src={preview} alt="preview" className="w-40 h-36 object-cover rounded-lg mt-4" />}
+          {preview && (
+            <img src={preview} alt="preview" className="w-40 h-36 object-cover rounded-lg mt-4" />
+          )}
 
-          <button type="submit" disabled={loading} className={`w-full py-3 rounded-lg font-semibold text-white ${loading ? "bg-green-400" : "bg-green-600 hover:bg-green-700"}`}>
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full py-3 rounded-lg font-semibold text-white ${
+              loading ? "bg-green-400" : "bg-green-600 hover:bg-green-700"
+            }`}
+          >
             {loading ? <Loader2 className="animate-spin w-5 h-5 mx-auto" /> : "Create Post"}
           </button>
         </form>

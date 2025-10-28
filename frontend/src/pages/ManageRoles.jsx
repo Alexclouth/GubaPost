@@ -1,8 +1,11 @@
+// src/pages/ManageRoles.jsx
 import { useState, useEffect } from "react";
 import { Shield, Edit, Trash2, CheckCircle2 } from "lucide-react";
-import axios from "axios";
+import api from "../api/axios"; // ← centralized axios instance
+import { useAuth } from "../context/AuthContext";
 
 export default function ManageRoles() {
+  const { token } = useAuth();
   const [roles, setRoles] = useState([]);
   const [newRole, setNewRole] = useState({ name: "", description: "", permissions: [] });
   const [editingRoleId, setEditingRoleId] = useState(null);
@@ -13,14 +16,16 @@ export default function ManageRoles() {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/roles");
+        const res = await api.get("/api/roles", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setRoles(res.data);
       } catch (err) {
-        console.error(err);
+        console.error("Failed to fetch roles:", err);
       }
     };
     fetchRoles();
-  }, []);
+  }, [token]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,11 +33,15 @@ export default function ManageRoles() {
 
     try {
       if (editingRoleId) {
-        const res = await axios.put(`http://localhost:5000/api/roles/${editingRoleId}`, newRole);
+        const res = await api.put(`/api/roles/${editingRoleId}`, newRole, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setRoles(roles.map((r) => (r._id === editingRoleId ? res.data : r)));
         setEditingRoleId(null);
       } else {
-        const res = await axios.post("http://localhost:5000/api/roles", newRole);
+        const res = await api.post("/api/roles", newRole, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setRoles([...roles, res.data]);
       }
       setNewRole({ name: "", description: "", permissions: [] });
@@ -44,7 +53,9 @@ export default function ManageRoles() {
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this role?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/roles/${id}`);
+      await api.delete(`/api/roles/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setRoles(roles.filter((r) => r._id !== id));
     } catch (err) {
       alert(err.response?.data?.message || "Failed to delete role");
