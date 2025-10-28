@@ -43,6 +43,6 @@ export default function ProtectedRoute({
     return <Navigate to="/" replace />;
   }
 
-  // ✅ Authorized
+  // ✅ Authorized 
   return children;
 }
