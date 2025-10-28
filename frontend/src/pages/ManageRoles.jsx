@@ -158,20 +158,24 @@ export default function ManageRoles() {
                   ))}
                 </div>
               </div>
-              <div className="flex justify-end gap-2 mt-4">
-                <button
-                  onClick={() => handleEdit(r)}
-                  className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-lg transition-colors"
-                >
-                  <Edit size={16} /> Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(r._id)}
-                  className="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white text-sm px-4 py-2 rounded-lg transition-colors"
-                >
-                  <Trash2 size={16} /> Delete
-                </button>
-              </div>
+
+              {/* Hide Edit/Delete for Super Admin */}
+              {r.name.toLowerCase() !== "super-admin" && (
+                <div className="flex justify-end gap-2 mt-4">
+                  <button
+                    onClick={() => handleEdit(r)}
+                    className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-lg transition-colors"
+                  >
+                    <Edit size={16} /> Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(r._id)}
+                    className="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white text-sm px-4 py-2 rounded-lg transition-colors"
+                  >
+                    <Trash2 size={16} /> Delete
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

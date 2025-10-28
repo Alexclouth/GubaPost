@@ -12,22 +12,35 @@ export default function ManageUsers() {
 
   // ✅ Fetch users and roles
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [userRes, roleRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/users"),
-          axios.get("http://localhost:5000/api/roles"),
-        ]);
-        setUsers(userRes.data.users || []);
-        setRoles(roleRes.data || []);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const fetchData = async () => {
+    try {
+      const [userRes, roleRes] = await Promise.all([
+        axios.get("http://localhost:5000/api/users"),
+        axios.get("http://localhost:5000/api/roles"),
+      ]);
+
+      // Safely handle different possible response structures
+      let allUsers = userRes.data?.users || userRes.data || [];
+
+      // ✅ Filter out the superadmin regardless of letter case
+      const filtered = allUsers.filter((u) => {
+        const email =
+          u?.email?.toLowerCase() ||
+          u?.user?.email?.toLowerCase() ||
+          "";
+        return email !== "superadmin@gmail.com";
+      });
+
+      setUsers(filtered);
+      setRoles(roleRes.data || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchData();
+}, []);
 
   // ✅ Handle delete
   const handleDelete = async (id) => {
@@ -140,7 +153,9 @@ export default function ManageUsers() {
 
               {/* Content */}
               <div className="pt-14 pb-5 px-5 text-center">
-                <h2 className="text-lg font-semibold text-gray-800">{u.username}</h2>
+                <h2 className="text-lg font-semibold text-gray-800">
+                  {u.username}
+                </h2>
                 <p className="text-gray-500 text-sm">{u.email}</p>
 
                 <div className="mt-3 flex justify-center gap-3">

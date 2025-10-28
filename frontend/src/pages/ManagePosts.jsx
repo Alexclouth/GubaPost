@@ -1,6 +1,6 @@
 // src/pages/ManagePosts.jsx
 import { useState, useEffect } from "react";
-import { FileText, Edit, Trash2, Loader2 } from "lucide-react";
+import { FileText, Edit, Trash2, Loader2, Search } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 
@@ -12,6 +12,7 @@ export default function ManagePosts() {
   const [newStatus, setNewStatus] = useState("");
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState(""); // ✅ Search input state
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -75,6 +76,13 @@ export default function ManagePosts() {
     }
   };
 
+  // ✅ Filter posts by search term (title or content)
+  const filteredPosts = posts.filter(
+    (post) =>
+      post.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      post.content?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen text-gray-600">
@@ -86,13 +94,28 @@ export default function ManagePosts() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-green-50 p-6">
-      <h1 className="text-3xl font-extrabold text-gray-800 mb-8 flex items-center gap-2">
-        <FileText className="text-green-600" /> Manage Posts
-      </h1>
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+        <h1 className="text-3xl font-extrabold text-gray-800 flex items-center gap-2">
+          <FileText className="text-green-600" /> Manage Posts
+        </h1>
 
-      {posts.length > 0 ? (
+        {/* ✅ Search Bar */}
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <input
+            type="text"
+            placeholder="Search posts..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+          />
+        </div>
+      </div>
+
+      {filteredPosts.length > 0 ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {posts.map((post) => (
+          {filteredPosts.map((post) => (
             <div
               key={post._id}
               className="bg-white shadow-lg rounded-2xl p-5 hover:shadow-xl transition-transform duration-300 flex flex-col hover:-translate-y-1"
@@ -120,7 +143,6 @@ export default function ManagePosts() {
                 </p>
               )}
 
-              {/* Status badge above buttons */}
               <span
                 className={`self-start mb-3 px-3 py-1 rounded-full text-sm font-semibold ${
                   post.status === "Published"
@@ -131,7 +153,6 @@ export default function ManagePosts() {
                 {post.status || "Draft"}
               </span>
 
-              {/* Action buttons */}
               <div className="flex justify-between items-center mt-auto">
                 <button
                   onClick={() => handleEditClick(post)}
@@ -153,7 +174,9 @@ export default function ManagePosts() {
           ))}
         </div>
       ) : (
-        <p className="text-center text-gray-500 mt-10">No posts available at the moment.</p>
+        <p className="text-center text-gray-500 mt-10">
+          No posts found matching your search.
+        </p>
       )}
 
       {/* Edit Status Modal */}

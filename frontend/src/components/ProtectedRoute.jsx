@@ -1,5 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
 
 export default function ProtectedRoute({
   allowedPermissions = [],
@@ -8,8 +10,38 @@ export default function ProtectedRoute({
 }) {
   const { user, isLoading, token } = useAuth();
   const location = useLocation();
+  const [redirect, setRedirect] = useState(false);
 
-  // ⏳ Wait while user data is being fetched
+  useEffect(() => {
+    if (!isLoading && user && token) {
+      let shouldRedirect = false;
+
+      // 🧑‍💼 Require Super Admin
+      if (requireSuperAdmin && user.role?.name !== "Super-admin") {
+        toast.error("Access denied: Only Super Admins can view this page.");
+        shouldRedirect = true;
+      }
+
+      // 🔐 Permission check
+      const userPermissions = user.role?.permissions || [];
+      const hasPermission =
+        allowedPermissions.length === 0 ||
+        allowedPermissions.some((perm) => userPermissions.includes(perm));
+
+      if (!hasPermission && user.role?.name !== "Super-admin") {
+        toast.error("Access denied: You do not have permission to access this page.");
+        shouldRedirect = true;
+      }
+
+      if (shouldRedirect) {
+        // delay redirect so toast can show
+        const timeout = setTimeout(() => setRedirect(true), 2000);
+        return () => clearTimeout(timeout); // cleanup if unmounted
+      }
+    }
+  }, [user, token, isLoading, requireSuperAdmin, allowedPermissions]);
+
+  // ⏳ Loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -23,24 +55,9 @@ export default function ProtectedRoute({
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  // 🧑‍💼 Super-admin only route
-  if (requireSuperAdmin && user.role?.name !== "Super-admin") {
-    return <Navigate to="/" replace />;
-  }
-
-  // ✅ Super-admin always has full access
-  if (user.role?.name === "Super-admin") {
-    return children;
-  }
-
-  // 🔐 If route requires certain permissions
-  const userPermissions = user.role?.permissions || [];
-  const hasPermission =
-    allowedPermissions.length === 0 ||
-    allowedPermissions.some((perm) => userPermissions.includes(perm));
-
-  if (!hasPermission) {
-    return <Navigate to="/" replace />;
+  // 🚀 Redirect after toast
+  if (redirect) {
+    return <Navigate to="/" replace state={{ from: location }} />;
   }
 
   // ✅ Authorized
