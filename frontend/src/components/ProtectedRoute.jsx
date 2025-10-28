@@ -60,6 +60,6 @@ export default function ProtectedRoute({
     return <Navigate to="/" replace state={{ from: location }} />;
   }
 
-  // ✅ Authorized
+  // ✅ Authorized 
   return children;
 }
