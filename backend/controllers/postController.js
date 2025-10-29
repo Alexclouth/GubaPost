@@ -90,7 +90,7 @@ export const deletePost = async (req, res) => {
     const post = await Post.findById(id);
     if (!post) return res.status(404).json({ message: "Post not found" });
 
-    await Post.deleteOne({ _id: id }); // ✅ FIX: remove() deprecated
+    await Post.deleteOne({ _id: id }); //FIX: remove() deprecated
     res.json({ message: "Post deleted successfully" });
   } catch (err) {
     console.error("DELETE POST ERROR:", err.message);
