@@ -47,7 +47,7 @@ This project helped us:
 ## 👥 Authors
 
 **Alazer Gebrekidan**  
-**Marianawit Alemayehu**  
+**Mariamawit Alemayehu**  
 **Eyerusalem Gedion**
 
 ---
