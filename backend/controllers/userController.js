@@ -1,6 +1,6 @@
 import User from "../models/User.js";
 
-// ✅ Get all users
+// Get all users
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User.find().populate("role");
@@ -11,7 +11,7 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-// ✅ Delete user
+// Delete user
 export const deleteUser = async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
@@ -23,7 +23,7 @@ export const deleteUser = async (req, res) => {
   }
 };
 
-// ✅ Update user
+// Update user
 export const updateUser = async (req, res) => {
   try {
     const { username, email, role, status } = req.body;
